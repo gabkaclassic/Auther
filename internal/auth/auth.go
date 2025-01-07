@@ -3,6 +3,7 @@ package auth
 import (
 	"auther/internal/db/models"
 	"errors"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -28,7 +29,23 @@ func CreateUser(db *gorm.DB, user *models.User) error {
 	}
 
 	user.Password = string(hashedPassword)
+
 	return db.Create(user).Error
+}
+
+func DeleteUser(db *gorm.DB, user *models.User) error {
+
+	return db.Unscoped().Delete(user).Error
+}
+
+func DeleteUserByID(db *gorm.DB, userId string) error {
+
+	return db.Unscoped().Delete(&models.User{}, userId).Error
+}
+
+func DeleteUserByLogin(db *gorm.DB, login string) error {
+
+	return db.Exec("DELETE FROM users WHERE login = ?", login).Error
 }
 
 func IsAdminToken(token string, adminTokens []string) bool {

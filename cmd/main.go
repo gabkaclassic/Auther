@@ -6,12 +6,12 @@ import (
 	"log"
 	"net/http"
 
-	"gorm.io/gorm"
-
 	"auther/configs"
 	database "auther/internal/db"
 	"auther/internal/server/handlers"
 	"auther/internal/server/middlewares"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -59,11 +59,18 @@ func initDatabase(DBConfig *configs.DBConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
-func initRouter(cfg *configs.Config, db *gorm.DB) *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/login", handlers.LoginHandler(cfg.JWT, db))
-	mux.HandleFunc("/refresh", handlers.RefreshTokenHandler(cfg.JWT, db))
-	mux.Handle("/users", middlewares.AdminTokenMiddleware(cfg.Admin)(http.HandlerFunc(handlers.CreateUserHandler(db))))
+func initRouter(cfg *configs.Config, db *gorm.DB) *mux.Router {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/login", handlers.LoginHandler(cfg.JWT, db)).Methods("POST")
+	router.HandleFunc("/refresh", handlers.RefreshTokenHandler(cfg.JWT, db)).Methods("POST")
+	router.Handle("/users", middlewares.AdminTokenMiddleware(cfg.Admin)(http.HandlerFunc(handlers.CreateUserHandler(db)))).Methods("POST")
+
+	router.Handle("/users", middlewares.AdminTokenMiddleware(cfg.Admin)(http.HandlerFunc(handlers.DeleteUserHandler(db)))).Methods("DELETE")
+	router.Handle("/users/id/{id}", middlewares.AdminTokenMiddleware(cfg.Admin)(http.HandlerFunc(handlers.DeleteUserByIDHandler(db)))).Methods("DELETE")
+	router.Handle("/users/login", middlewares.AdminTokenMiddleware(cfg.Admin)(http.HandlerFunc(handlers.DeleteUserByLoginHandler(db)))).Methods("DELETE")
+
 	log.Println("Router initialized successfully")
-	return mux
+
+	return router
 }
