@@ -7,13 +7,15 @@ services:
       dockerfile: Dockerfile
     container_name: auth_service_app
     environment:
-      CONFIG_PATH: /app/config.yml
+      CONFIG_PATH: /app/configs/config.yaml
     volumes:
-      - ./config.yml:/app/config.yml
+      - ./config.yml:/app/configs/config.yaml
     ports:
       - "5000:5000"
     depends_on:
       - db
+    networks:
+      - auther_network
 
   db:
     image: postgres:latest
@@ -26,6 +28,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - auther_network
 
 volumes:
   pgdata:
+
+networks:
+  auther_network:
+    driver: bridge
